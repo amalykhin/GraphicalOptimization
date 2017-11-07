@@ -30,43 +30,43 @@ public class LinesDemo extends JFrame {
         g.fillOval(p.x-r,p.y-r,2*r,2*r);
     }
 
-    class Canvas extends JPanel {
-        Dimension dim;
-        //Gonna do a list for all the lines except the vector line.
-        Line vec,l2;
-        Point mouse = null;
-        Point p;
-        int dist;
-        Point origin;
-        //Gonna do a list of intersection points.
-        Point intersections;
+    class Canvas extends CartesianCanvas {
+        Line vector;
+        List<Line> lines;
+        //Reference to the focused line. (It is supposed to be the vector.)
+        Line focused;
+        Point mousePos;
+        //Distance between the focused line and the mouse cursor.
+        int distance;
+        //List of all intersections between vector line and all the others.
+        List<Point> intersections;
 
         Canvas (int width, int height) {
-            dim = new Dimension();
-            dim.setSize(width, height);
-            setPreferredSize(dim);
+            super(width, height);
 
-            p = new Point(0,0);
-            vec = new Line(new Point(0, 0), new Point(0, 1));
-            l2 = new Line(new Point(0, 0), new Point(1, 1));
-            origin = new Point(dim.width/2,dim.height/2);
+            mousePos = new Point(0,0);
+            vector = new Line(0, 0, 0, 1);
+            //l2 = new Line(new Point(0, 0), new Point(1, 1));
+            lines.add(new Line(0, 0, 1, 1));
 
             addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
                 public void mouseDragged(MouseEvent mouseEvent) {
-                    p = mouseEvent.getPoint();
-                    p.x -= origin.x;
-                    p.y = -p.y+origin.y;
-                    dist = (int)vec.distance(p);
+                    mousePos = mouseEvent.getPoint();
+                    //Transforming the mouse cursor coordinates according to the current coordinate system.
+                    mousePos.x -= origin.x;
+                    mousePos.y = -mousePos.y+origin.y;
+
+                    distance = (int)vector.distance(mousePos);
 
 
                     repaint();
 
-                    if (mouse == null)
+                    if (focused == null)
                         return;
-                    intersections = vec.getIntersection(l2);
+                    intersections = vector.getIntersection(l2);
 
-                    vec.move(mouseEvent.getX()-mouse.x,-mouseEvent.getY()+mouse.y);
+                    vector.move(mouseEvent.getX()-mouse.x,-mouseEvent.getY()+mouse.y);
                     mouse = mouseEvent.getPoint();
                 }
             });
@@ -76,14 +76,14 @@ public class LinesDemo extends JFrame {
                     mouse = mouseEvent.getPoint();
 
                     p = (Point)mouse.clone();
-                    p.x -= origin.x;
-                    p.y = -p.y+origin.y;
+                    mousePos.x -= origin.x;
+                    mousePos.y = -mousePos.y+origin.y;
                     System.out.println(mouse);
 
-                //    intersections = vec.getIntersection(l2);
+                //    intersections = vector.getIntersection(l2);
 
-                    dist = (int) vec.distance(p);
-                    if (vec.distance(p) > 10) {
+                    distance = (int) vector.distanceance(p);
+                    if (vector.distanceance(p) > 10) {
                         mouse = null;
                     }
 
@@ -101,35 +101,32 @@ public class LinesDemo extends JFrame {
         @Override
         protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
-            Graphics2D g = (Graphics2D)graphics;
-            g.translate(origin.x, origin.y);
-            g.scale(1,-1);
 
-            g.setColor(Color.LIGHT_GRAY);
-            g.drawLine(0, origin.y, 0, -origin.y);
-            g.drawLine(-origin.x, 0, origin.x, 0);
+            graphics.setColor(Color.LIGHT_GRAY);
+            graphics.drawLine(0, origin.y, 0, -origin.y);
+            graphics.drawLine(-origin.x, 0, origin.x, 0);
 
             //Drawing an endless line.
             Point start, end;
             start = new Point();
             end = new Point();
-            if (vec.isHorisontal() || vec.getX(origin.y) < -origin.x) {
+            if (vector.isHorisontal() || vector.getX(origin.y) < -origin.x) {
                 start.x = -origin.x;
-                start.y = vec.getY(start.x);
+                start.y = vector.getY(start.x);
             } else {
-                //start.x = vec.getX(origin.y);
+                //start.x = vector.getX(origin.y);
                 start.y = origin.y;
-                start.x = vec.getX(start.y);
+                start.x = vector.getX(start.y);
             }
-            if (vec.isHorisontal() || vec.getX(-origin.y) > origin.x) {
+            if (vector.isHorisontal() || vector.getX(-origin.y) > origin.x) {
                 end.x = origin.x;
-                end.y = vec.getY(end.x);
+                end.y = vector.getY(end.x);
             } else {
                 end.y = -origin.y;
-                end.x = vec.getX(end.y);
+                end.x = vector.getX(end.y);
             }
-            g.setColor(Color.BLACK);
-            g.drawLine(start.x,start.y,end.x,end.y);
+            graphics.setColor(Color.BLACK);
+            graphics.drawLine(start.x,start.y,end.x,end.y);
 
             if (l2.isHorisontal() || l2.getX(origin.y) < -origin.x) {
                 start.x = -origin.x;
@@ -145,12 +142,12 @@ public class LinesDemo extends JFrame {
                 end.y = -origin.y;
                 end.x = l2.getX(end.y);
             }
-            g.drawLine(start.x,start.y,end.x,end.y);
+            graphics.drawLine(start.x,start.y,end.x,end.y);
 
-            g.setColor(Color.RED);
+            graphics.setColor(Color.RED);
             if (intersections != null)
                 fillCircle(g, intersections, 3);
-            //drawCircle(g, p, dist);
+            //drawCircle(g, p, distance);
         }
 
     }

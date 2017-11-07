@@ -7,13 +7,13 @@ public class Line {
     double A, B, C;
     //Point start, end;
 
-    Line (Point start, Point end) {
+    Line (int startX, int startY, int endX, int endY) {
      /*   this.start = start;
         this.end = end;
         */
-        A = end.y - start.y;
-        B = start.x - end.x;
-        C = start.y*end.x - end.y*start.x;
+        A = endY - startY;
+        B = startX - endX;
+        C = startY*endX - endY*startX;
     }
 
     Line (double A, double B, double C) {
