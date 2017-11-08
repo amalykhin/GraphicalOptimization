@@ -6,12 +6,13 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class LinesDemo extends JFrame {
 
     LinesDemo () {
-        Canvas canvas = new Canvas(300, 300);
+        Canvas canvas = new Canvas(600, 600);
         canvas.setBackground(Color.WHITE);
         setContentPane(canvas);
 
@@ -31,60 +32,73 @@ public class LinesDemo extends JFrame {
     }
 
     class Canvas extends CartesianCanvas {
-        Line vector;
+        final int POINT_SIZE = 3;
+        final Line vector;
         List<Line> lines;
         //Reference to the focused line. (It is supposed to be the vector.)
         Line focused;
+        //Mouse position according to the origin in the top left corner.
         Point mousePos;
-        //Distance between the focused line and the mouse cursor.
+        //Distance between the focused line and the mouse cursor. (For debug purposes.)
         int distance;
         //List of all intersections between vector line and all the others.
         List<Point> intersections;
 
         Canvas (int width, int height) {
             super(width, height);
+            lines = new ArrayList<>();
+            intersections = new ArrayList<>();
 
-            mousePos = new Point(0,0);
+           // mousePos = new Point(0,0);
             vector = new Line(0, 0, 0, 1);
-            //l2 = new Line(new Point(0, 0), new Point(1, 1));
+
+            lines.add(vector);
             lines.add(new Line(0, 0, 1, 1));
+            lines.add(new Line(0, 10, 1, 10));
 
             addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
                 public void mouseDragged(MouseEvent mouseEvent) {
-                    mousePos = mouseEvent.getPoint();
-                    //Transforming the mouse cursor coordinates according to the current coordinate system.
-                    mousePos.x -= origin.x;
-                    mousePos.y = -mousePos.y+origin.y;
-
-                    distance = (int)vector.distance(mousePos);
-
-
-                    repaint();
-
                     if (focused == null)
                         return;
-                    intersections = vector.getIntersection(l2);
 
-                    vector.move(mouseEvent.getX()-mouse.x,-mouseEvent.getY()+mouse.y);
-                    mouse = mouseEvent.getPoint();
+                    intersections.removeAll(intersections);
+                    for (Line line : lines) {
+                        if (line == vector)
+                            continue;
+                        intersections.add(vector.getIntersection(line));
+                    }
+
+                    focused.move(mouseEvent.getX()-mousePos.x,-mouseEvent.getY()+mousePos.y);
+                    mousePos = mouseEvent.getPoint();
+
+                    repaint();
                 }
             });
+
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent mouseEvent) {
-                    mouse = mouseEvent.getPoint();
+                    mousePos = mouseEvent.getPoint();
 
-                    p = (Point)mouse.clone();
-                    mousePos.x -= origin.x;
-                    mousePos.y = -mousePos.y+origin.y;
-                    System.out.println(mouse);
+                    Point p = new Point();
+                    p.x = mousePos.x - origin.x;
+                    p.y = -mousePos.y+origin.y;
+                    System.out.println(p);
 
-                //    intersections = vector.getIntersection(l2);
+                    //Maybe check all lines for being focused?
+                    distance = 11;
+                    int new_dist;
+                    for (Line line : lines) {
+                        new_dist = (int)line.distance(p);
 
-                    distance = (int) vector.distanceance(p);
-                    if (vector.distanceance(p) > 10) {
-                        mouse = null;
+                        //Debug information.
+                        System.out.println(line+". Distance: "+new_dist);
+
+                        if (distance > new_dist) {
+                            distance = new_dist;
+                            focused = line;
+                        }
                     }
 
                     repaint();
@@ -92,7 +106,8 @@ public class LinesDemo extends JFrame {
 
                 @Override
                 public void mouseReleased(MouseEvent mouseEvent) {
-                    mouse = null;
+                    focused = null;
+                    repaint();
                 }
             });
 
@@ -102,51 +117,43 @@ public class LinesDemo extends JFrame {
         protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
 
-            graphics.setColor(Color.LIGHT_GRAY);
-            graphics.drawLine(0, origin.y, 0, -origin.y);
-            graphics.drawLine(-origin.x, 0, origin.x, 0);
+            //Antaliasing.
+            //Graphics2D g2d = (Graphics2D)graphics;
+            //g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            //Drawing an endless line.
+            //Drawing the endless lines.
             Point start, end;
             start = new Point();
             end = new Point();
-            if (vector.isHorisontal() || vector.getX(origin.y) < -origin.x) {
-                start.x = -origin.x;
-                start.y = vector.getY(start.x);
-            } else {
-                //start.x = vector.getX(origin.y);
-                start.y = origin.y;
-                start.x = vector.getX(start.y);
-            }
-            if (vector.isHorisontal() || vector.getX(-origin.y) > origin.x) {
-                end.x = origin.x;
-                end.y = vector.getY(end.x);
-            } else {
-                end.y = -origin.y;
-                end.x = vector.getX(end.y);
-            }
             graphics.setColor(Color.BLACK);
-            graphics.drawLine(start.x,start.y,end.x,end.y);
-
-            if (l2.isHorisontal() || l2.getX(origin.y) < -origin.x) {
-                start.x = -origin.x;
-                start.y = l2.getY(start.x);
-            } else {
-                start.y = origin.y;
-                start.x = l2.getX(start.y);
+            for (Line line : lines) {
+                if (line.isHorisontal() || line.getX(origin.y) < -origin.x) {
+                    start.x = -origin.x;
+                    start.y = line.getY(start.x);
+                } else {
+                    start.y = origin.y;
+                    start.x = line.getX(start.y);
+                }
+                if (line.isHorisontal() || line.getX(-origin.y) > origin.x) {
+                    end.x = origin.x;
+                    end.y = line.getY(end.x);
+                } else {
+                    end.y = -origin.y;
+                    end.x = line.getX(end.y);
+                }
+                if (line == focused) {
+                    graphics.setColor(Color.BLUE);
+                    graphics.drawLine(start.x, start.y, end.x, end.y);
+                    graphics.setColor(Color.BLACK);
+                } else
+                    graphics.drawLine(start.x, start.y, end.x, end.y);
             }
-            if (l2.isHorisontal() || l2.getX(-origin.y) > origin.x) {
-                end.x = origin.x;
-                end.y = l2.getY(end.x);
-            } else {
-                end.y = -origin.y;
-                end.x = l2.getX(end.y);
-            }
-            graphics.drawLine(start.x,start.y,end.x,end.y);
 
             graphics.setColor(Color.RED);
-            if (intersections != null)
-                fillCircle(g, intersections, 3);
+            for (Point point : intersections)
+                if (intersections != null)
+                    fillCircle(graphics, point, POINT_SIZE);
+
             //drawCircle(g, p, distance);
         }
 
