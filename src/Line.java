@@ -22,6 +22,12 @@ public class Line {
         this.C = C;
     }
 
+    Line (Line l) {
+        A = l.A;
+        B = l.B;
+        C = l.C;
+    }
+
     /*Line (int startX, int startY, int endX, int endY) {
         start.x = startX;
         start.y = startY;
@@ -32,9 +38,15 @@ public class Line {
     boolean contains (Point p) {
         return (A*p.x + B*p.y + C) == 0;
     }
+    boolean contains (Line l) {
+         return isParallel(l) && (l.C==C);
+    }
 
     Point getIntersection (Line l) {
         Point res = new Point();
+
+        if (isColinear(l))
+            return null;
 
         res.y = (int)((l.A*C - A*l.C)/(A*l.B - l.A*B));
         res.x = (int)((-B*res.y - C)/A);
@@ -68,5 +80,13 @@ public class Line {
 
     boolean isVertical () {
         return (B == 0);
+    }
+
+    boolean isColinear (Line l) {
+        return (l.isHorisontal()&&isHorisontal()) || (l.isVertical()&&isVertical()) || (l.A/A == l.B/B);
+    }
+
+    boolean isParallel (Line l) {
+        return (l.A==A) && (l.B==B);
     }
 }

@@ -33,8 +33,13 @@ public class LinesDemo extends JFrame {
 
     class Canvas extends CartesianCanvas {
         final int POINT_SIZE = 3;
+        final int FOCUS_DISTANCE = 5;
+
         final Line vector;
         List<Line> lines;
+        List<LineSegment> segments;
+        //Colinear lines.
+        Line colinear;
         //Reference to the focused line. (It is supposed to be the vector.)
         Line focused;
         //Mouse position according to the origin in the top left corner.
@@ -48,13 +53,18 @@ public class LinesDemo extends JFrame {
             super(width, height);
             lines = new ArrayList<>();
             intersections = new ArrayList<>();
+            segments = new ArrayList<>();
 
            // mousePos = new Point(0,0);
             vector = new Line(0, 0, 0, 1);
 
+            //lines.add(new Line(0, 0, 1, 1));
+            //lines.add(new Line(0, 10, 1, 10));
+            //lines.add(new Line(200, 0, 200, 1));
+            //lines.add(new Line(0, 0, 1, 1));
             lines.add(vector);
-            lines.add(new Line(0, 0, 1, 1));
-            lines.add(new Line(0, 10, 1, 10));
+
+            segments.add(new LineSegment(new Line(0,0,1,1),-50,-50,50,50));
 
             addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
@@ -62,11 +72,19 @@ public class LinesDemo extends JFrame {
                     if (focused == null)
                         return;
 
+                    Point intersection;
                     intersections.removeAll(intersections);
-                    for (Line line : lines) {
+                    colinear = null;
+                    List<Line> l = new ArrayList<>();
+                    l.addAll(lines);
+                    l.addAll(segments);
+                    for (Line line : l) {
                         if (line == vector)
                             continue;
-                        intersections.add(vector.getIntersection(line));
+                        if ((intersection=line.getIntersection(vector)) != null)
+                            intersections.add(intersection);
+                        else if (vector.contains(line))
+                            colinear = vector;
                     }
 
                     focused.move(mouseEvent.getX()-mousePos.x,-mouseEvent.getY()+mousePos.y);
@@ -86,28 +104,35 @@ public class LinesDemo extends JFrame {
                     p.y = -mousePos.y+origin.y;
                     System.out.println(p);
 
-                    //Maybe check all lines for being focused?
-                    distance = 11;
+                    distance = FOCUS_DISTANCE + 1;
                     int new_dist;
+                    /*
                     for (Line line : lines) {
                         new_dist = (int)line.distance(p);
 
                         //Debug information.
-                        System.out.println(line+". Distance: "+new_dist);
+                        System.out.println(line + ". Distance: " + new_dist);
 
                         if (distance > new_dist) {
                             distance = new_dist;
                             focused = line;
                         }
                     }
+                    */
+                    if ((new_dist=(int)vector.distance(p)) < distance) {
+                        distance = new_dist;
+                        focused = vector;
+                    } else
+                        focused = null;
+                    System.out.println(vector + ". Distance: " + new_dist);
 
                     repaint();
                 }
 
                 @Override
                 public void mouseReleased(MouseEvent mouseEvent) {
-                    focused = null;
-                    repaint();
+            //        focused = null;
+             //       repaint();
                 }
             });
 
@@ -145,16 +170,23 @@ public class LinesDemo extends JFrame {
                     graphics.setColor(Color.BLUE);
                     graphics.drawLine(start.x, start.y, end.x, end.y);
                     graphics.setColor(Color.BLACK);
+                } else if (line == colinear) {
+                    graphics.setColor(Color.RED);
+                    graphics.drawLine(start.x, start.y, end.x, end.y);
+                    graphics.setColor(Color.BLACK);
                 } else
                     graphics.drawLine(start.x, start.y, end.x, end.y);
             }
 
+            for (LineSegment segment: segments) {
+                graphics.drawLine(segment.a.x, segment.a.y, segment.b.x, segment.b.y);
+            }
+
+            //Draw line intersections.
             graphics.setColor(Color.RED);
             for (Point point : intersections)
                 if (intersections != null)
                     fillCircle(graphics, point, POINT_SIZE);
-
-            //drawCircle(g, p, distance);
         }
 
     }
