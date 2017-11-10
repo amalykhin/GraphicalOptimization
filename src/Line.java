@@ -7,7 +7,7 @@ public class Line {
     double A, B, C;
     //Point start, end;
 
-    Line (int startX, int startY, int endX, int endY) {
+    Line (double startX, double startY, double endX, double endY) {
      /*   this.start = start;
         this.end = end;
         */
@@ -35,26 +35,36 @@ public class Line {
         end.y = endY;
     }*/
 
-    boolean contains (Point p) {
+    boolean contains (Point.Double p) {
         return (A*p.x + B*p.y + C) == 0;
     }
     boolean contains (Line l) {
-         return isParallel(l) && (l.C==C);
+         //return isParallel(l) && (l.C==C);
+        boolean aux = isColinear(l) && (Math.abs(l.C/C - l.A/A) < 1.e-6);
+        return aux;
     }
 
-    Point getIntersection (Line l) {
-        Point res = new Point();
+    Point.Double getIntersection (Line l) {
+        Point.Double res = new Point.Double();
 
         if (isColinear(l))
             return null;
+        else if (l.isHorisontal())
+            return new Point.Double(getX(-l.C/l.B),-l.C/l.B);
+        else if (isHorisontal())
+            return new Point.Double(l.getX(-C/B),-C/B);
+        else if (l.isVertical())
+            return new Point.Double(-l.C/l.A,getY(-l.C/l.A));
+        else if (isVertical())
+            return new Point.Double(-C/A,l.getY(C/A));
 
-        res.y = (int)((l.A*C - A*l.C)/(A*l.B - l.A*B));
-        res.x = (int)((-B*res.y - C)/A);
+        res.y = ((l.A*C - A*l.C)/(A*l.B - l.A*B));
+        res.x = ((-B*res.y - C)/A);
 
         return res;
     }
 
-    void move (int deltaX, int deltaY) {
+    void move (double deltaX, double deltaY) {
         C -= (deltaX*A + deltaY*B);
     }
 
@@ -62,15 +72,15 @@ public class Line {
        move(delta.x, delta.y);
     }
 
-    int getX (int y) {
-        return (int)((-C-B*y)/A);
+    double getX (double y) {
+        return ((-C-B*y)/A);
     }
 
-    int getY (int x) {
-        return (int)((-C-A*x)/B);
+    double getY (double x) {
+        return ((-C-A*x)/B);
     }
 
-    double distance (Point p) {
+    double distance (Point.Double p) {
         return Math.abs(A*p.x+B*p.y+C)/Math.sqrt(Math.pow(A,2)+Math.pow(B,2));
     }
 

@@ -40,5 +40,6 @@ public abstract class CartesianCanvas extends JPanel {
         graphics.setColor(Color.LIGHT_GRAY);
         graphics.drawLine(0, origin.y, 0, -origin.y);
         graphics.drawLine(-origin.x, 0, origin.x, 0);
+
     }
 }
